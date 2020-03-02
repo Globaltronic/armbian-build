@@ -1,22 +1,274 @@
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/Makefile b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+index 7f55788e8..1727217cc 100644
+--- a/arch/arm64/boot/dts/allwinner/overlay/Makefile
++++ b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+@@ -1,6 +1,10 @@
+ # SPDX-License-Identifier: GPL-2.0
+ dtbo-$(CONFIG_ARCH_SUNXI) += \
+ 	sun50i-a64-boe-hb140wx1-501.dtbo \
++	sun50i-a64-i2c0-mcp3428.dtbo \
++	sun50i-a64-i2c0-lis35dh.dtbo \
++	sun50i-a64-mmc2-emmc.dtbo \
++	sun50i-a64-ethernet-wiipiido.dtbo \
+ 	sun50i-a64-i2c0.dtbo \
+ 	sun50i-a64-i2c1.dtbo \
+ 	sun50i-a64-pps-gpio.dtbo \
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-ethernet-wiipiido.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-ethernet-wiipiido.dts
+new file mode 100644
+index 000000000..c1d45304b
+--- /dev/null
++++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-ethernet-wiipiido.dts
+@@ -0,0 +1,68 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun50i-a64";
++
++/**
++* @brief Ethernet : Ethernet support for wiipiido board
++* 2020-02-03: Changes made for kernel 5.4.x support
++* 0x6b => rmii_pins
++* 0x23 => dcdc1
++*/
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			emac = "/soc/ethernet@1c30000";
++			mdio = "/soc/ethernet@1c30000/mdio";
++			ext_rgmii_phy = "/soc/ethernet@1c30000/mdio/ethernet-phy@1";
++			ext_rmii_phy1 = "/soc/ethernet@1c30000/mdio/ethernet-phy@1";
++			
++		};
++	};
++
++	fragment@1 {
++		target = <&emac>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			pinctrl-0 = <&rmii_pins>;
++			phy-mode = "rgmii-txid";
++			phy-supply = <&reg_dcdc1>;
++			allwinner,tx-delay-ps = <600>;
++
++		};
++	};
++	
++	fragment@2 {
++		target = <&mdio>;
++		__overlay__ {
++			#address-cells = <0x1>;
++			#size-cells = <0x0>;
++			
++		};
++	};
++
++	fragment@3 {
++		target = <&ext_rgmii_phy>;
++		__overlay__ {
++			reg = <0x7>;		
++		};
++	};
++
++	fragment@4 {
++		target = <&ext_rmii_phy1>;
++		__overlay__ {
++			reg = <0x7>;		
++		};
++	};
++
++	__fixups__ {
++		emac = "/fragment@1:target:0";
++		mdio = "/fragment@2:target:0";
++		ext_rgmii_phy = "/fragment@3:target:0";
++		ext_rmii_phy1 = "/fragment@4:target:0";
++	};
++};
++
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-lis35dh.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-lis35dh.dts
+new file mode 100644
+index 000000000..16b33639d
+--- /dev/null
++++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-lis35dh.dts
+@@ -0,0 +1,36 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun50i-a64";
++
++/**
++* @brief I2C0 : LIS35DH / LIS3DE MEMS support for wiipiido board
++*/
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			i2c0 = "/soc/i2c@1c2ac00";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2c0>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++		
++ 			lis35dh: mems@29{
++        			compatible = "st,lis3dh";
++			        reg = <0x29>;
++			        st,default-rate = <8>;
++        		};
++ 		};
++	};
++	
++	__fixups__ {
++		i2c0 = "/fragment@1:target:0";
++	};
++	
++};
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-mcp3428.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-mcp3428.dts
+new file mode 100644
+index 000000000..0a101c6b5
+--- /dev/null
++++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-mcp3428.dts
+@@ -0,0 +1,36 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun50i-a64";
++
++/**
++* @brief I2C0 : MCP3428 ADC support for wiipiido board
++* Kernel v5.4.x dts 
++*/
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			i2c0 = "/soc/i2c@1c2ac00";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2c0>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			
++			mcp3428: adc@6c{
++        			compatible = "microchip,mcp3428";
++        			reg = <0x6c>;
++        		};
++ 		};
++	};
++	
++	__fixups__ {
++		i2c0 = "/fragment@1:target:0";
++	};
++	
++};
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-mmc2-emmc.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-mmc2-emmc.dts
+new file mode 100644
+index 000000000..7c53f5666
+--- /dev/null
++++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-mmc2-emmc.dts
+@@ -0,0 +1,39 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun50i-a64";
++
++/**
++* @brief MMC2 : eMMC support for wiipiido board
++*/
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			mmc2 = "/soc/mmc@1c11000";
++		};
++	};
++
++	
++
++
++	fragment@1 {
++		target = <&mmc2>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++			pinctrl-names = "default";
++			pinctrl-0 = <&mmc2_pins>;
++			vmmc-supply = <&reg_dcdc1>;
++			vqmmc-supply = <&reg_dcdc1>;
++			bus-width = <8>;
++			non-removable;
++			cap-mmc-hw-reset;
++		};
++	};
++	__fixups__ {
++		mmc2 = "/fragment@1:target:0";
++	};
++};
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64.dts
-index 204c5a7bb..0990b1263 100644
+index 233743728..204c5a7bb 100644
 --- a/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64.dts
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64.dts
-@@ -350,7 +350,6 @@
+@@ -168,6 +168,16 @@
+ 	non-removable;
+ 	bus-width = <4>;
  	status = "okay";
- 
- 	bluetooth {
--		/*compatible = "realtek,rtl8723bs-bt";*/
- 		compatible = "brcm,bcm43438-bt";/* for WIIPIIDO  */
- 		max-speed = <1500000>; /* for WIIPIIDO  */
- 		clocks = <&rtc 1>; /* for WIIPIIDO  */
-@@ -360,8 +359,8 @@
- 		shutdown-gpios = <&r_pio 0 4 GPIO_ACTIVE_HIGH>; /* PL4 for WIIPIIDO */
- 		device-wake-gpios = <&r_pio 0 5 GPIO_ACTIVE_HIGH>; /* PL5 */
- 		host-wake-gpios = <&r_pio 0 6 GPIO_ACTIVE_HIGH>; /* PL6 */
--		/*firmware-postfix = "pine64";*/ /* for WIIPIIDO  */
- 	};
++	
++	/* Added for WIIPIIDO*/
++	brcmf: wifi@1 {
++                reg = <1>;
++                compatible = "brcm,bcm4329-fmac";
++                interrupt-parent = <&r_pio>;
++                interrupts = <0 3 IRQ_TYPE_LEVEL_LOW>; /* PL3 */
++                interrupt-names = "host-wake";
++        };
 +
  };
  
- /* On Pi-2 connector */
+ &ohci0 {
+@@ -336,14 +346,21 @@
+ &uart1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart1_pins>, <&uart1_rts_cts_pins>;
++	uart-has-rtscts; /* for WIIPIIDO  */
+ 	status = "okay";
+ 
+ 	bluetooth {
+-		compatible = "realtek,rtl8723bs-bt";
+-		reset-gpios = <&r_pio 0 4 GPIO_ACTIVE_LOW>; /* PL4 */
++		/*compatible = "realtek,rtl8723bs-bt";*/
++		compatible = "brcm,bcm43438-bt";/* for WIIPIIDO  */
++		max-speed = <1500000>; /* for WIIPIIDO  */
++		clocks = <&rtc 1>; /* for WIIPIIDO  */
++		clock-names = "lpo"; /* for WIIPIIDO  */
++		vbat-supply = <&reg_eldo1>; /* for WIIPIIDO  */
++		vddio-supply = <&reg_dldo4>; /* for WIIPIIDO  */
++		shutdown-gpios = <&r_pio 0 4 GPIO_ACTIVE_HIGH>; /* PL4 for WIIPIIDO */
+ 		device-wake-gpios = <&r_pio 0 5 GPIO_ACTIVE_HIGH>; /* PL5 */
+ 		host-wake-gpios = <&r_pio 0 6 GPIO_ACTIVE_HIGH>; /* PL6 */
+-		firmware-postfix = "pine64";
++		/*firmware-postfix = "pine64";*/ /* for WIIPIIDO  */
+ 	};
+ };
+ 
+@@ -369,7 +386,8 @@
+ };
+ 
+ &usb_otg {
+-	dr_mode = "host";
++	/*dr_mode = "host";*/
++	dr_mode = "otg";
+ 	status = "okay";
+ };
+ 
