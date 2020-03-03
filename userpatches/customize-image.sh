@@ -27,12 +27,30 @@ Main() {
 			;;
 		buster)
 			# your code here
+			#CopyFsOverlay
+			echo root:root1234 | chpasswd
+			rm /root/.not_logged_in_yet
+			tar -xvzf /tmp/overlay/lib_firmware_brcm_bluetooth.tar.gz -C /.
+			tar -xvzf /tmp/overlay/lib_firmware_regulatory.tar.gz -C /.
 			;;
 		bionic)
 			# your code here
 			;;
 	esac
 } # Main
+
+CopyFsOverlay() {
+
+	# Copy Filesystem Overlay to specific board
+	# Work in progres...
+	# restrict to specific board...
+	echo root:root1234 | chpasswd
+	rm /root/.not_logged_in_yet
+
+	# copy does not work
+	#cp -r /tmp/overlay/ /.
+			
+}
 
 InstallOpenMediaVault() {
 	# use this routine to create a Debian based fully functional OpenMediaVault
