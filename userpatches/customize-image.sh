@@ -32,6 +32,7 @@ Main() {
 			rm /root/.not_logged_in_yet
 			tar -xvzf /tmp/overlay/lib_firmware_brcm_bluetooth.tar.gz -C /.
 			tar -xvzf /tmp/overlay/lib_firmware_regulatory.tar.gz -C /.
+			tar -xvzf /tmp/overlay/etc_modules_wiipiido.tar.gz -C /.
 			;;
 		bionic)
 			# your code here
