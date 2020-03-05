@@ -33,6 +33,8 @@ Main() {
 			tar -xvzf /tmp/overlay/lib_firmware_brcm_bluetooth.tar.gz -C /.
 			tar -xvzf /tmp/overlay/lib_firmware_regulatory.tar.gz -C /.
 			tar -xvzf /tmp/overlay/etc_modules_wiipiido.tar.gz -C /.
+			tar -xvzf /tmp/overlay/fs-overlay-wiipiido.tar.gz -C /.
+			apt install -y -q python python-smbus
 			;;
 		bionic)
 			# your code here
