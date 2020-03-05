@@ -34,7 +34,10 @@ Main() {
 			tar -xvzf /tmp/overlay/lib_firmware_regulatory.tar.gz -C /.
 			tar -xvzf /tmp/overlay/etc_modules_wiipiido.tar.gz -C /.
 			tar -xvzf /tmp/overlay/fs-overlay-wiipiido.tar.gz -C /.
-			apt install -y -q python python-smbus
+			tar -xvzf /tmp/overlay/bluezalsa.service.bak.tar.gz -C /.
+			apt install -y -q python python-smbus build-essential libasound2-dev dh-autoreconf libortp-dev bluez bluetooth \
+			bluez-tools libbluetooth-dev libusb-dev libglib2.0-dev libudev-dev libical-dev \
+			libreadline-dev libsbc1 libsbc-dev libfdk-aac-dev libdbus-1-dev mpg123
 			;;
 		bionic)
 			# your code here
