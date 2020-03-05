@@ -38,6 +38,9 @@ Main() {
 			apt install -y -q python python-smbus build-essential libasound2-dev dh-autoreconf libortp-dev bluez bluetooth \
 			bluez-tools libbluetooth-dev libusb-dev libglib2.0-dev libudev-dev libical-dev \
 			libreadline-dev libsbc1 libsbc-dev libfdk-aac-dev libdbus-1-dev mpg123
+			cd /root/bluez-alsa/build
+			make && make install
+			echo "export LIBASOUND_THREAD_SAFE=0" >> /etc/bash.bashrc
 			;;
 		bionic)
 			# your code here
