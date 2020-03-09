@@ -42,6 +42,10 @@ Main() {
 			cd /root/bluez-alsa/build
 			make && make install
 			echo "export LIBASOUND_THREAD_SAFE=0" >> /etc/bash.bashrc
+			# Does not commpile kernel. Must be added on kernel patches 
+			#cd /root/cp210x_gpio_test
+			#make all
+			#sudo cp cp210x_gpio.ko /lib/modules/`/bin/uname -r`/kernel/drivers/usb/serial/cp210x.ko
 			;;
 		bionic)
 			# your code here
