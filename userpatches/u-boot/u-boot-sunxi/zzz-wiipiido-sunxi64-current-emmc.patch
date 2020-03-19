@@ -1,0 +1,22 @@
+diff --git a/arch/arm/dts/sun50i-a64-pine64.dts b/arch/arm/dts/sun50i-a64-pine64.dts
+index c077b6c1..d694284f 100644
+--- a/arch/arm/dts/sun50i-a64-pine64.dts
++++ b/arch/arm/dts/sun50i-a64-pine64.dts
+@@ -135,6 +135,17 @@
+ 	status = "okay";
+ };
+ 
++&mmc2 {
++        pinctrl-names = "default";
++        pinctrl-0 = <&mmc2_pins>, <&mmc2_ds_pin>;
++        vmmc-supply = <&reg_dcdc1>;
++        vqmmc-supply = <&reg_dcdc1>;
++        bus-width = <8>;
++        non-removable;
++        cap-mmc-hw-reset;
++        status = "okay";
++};
++
+ &ohci0 {
+ 	status = "okay";
+ };
