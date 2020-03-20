@@ -1,0 +1,12 @@
+diff --git a/arch/arm/dts/sun50i-a64-pine64.dts b/arch/arm/dts/sun50i-a64-pine64.dts
+index d694284fa..a08309b27 100644
+--- a/arch/arm/dts/sun50i-a64-pine64.dts
++++ b/arch/arm/dts/sun50i-a64-pine64.dts
+@@ -162,6 +162,7 @@
+ 		reg = <0x3a3>;
+ 		interrupt-parent = <&r_intc>;
+ 		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
++		x-powers,drive-vbus-en; /* set N_VBUSEN as output pin */
+ 	};
+ };
+ 
