@@ -41,6 +41,7 @@ create_board_package()
 	# Replaces: unattended-upgrades may be needed to replace /etc/apt/apt.conf.d/50unattended-upgrades
 	# (distributions provide good defaults, so this is not needed currently)
 	# Depends: linux-base is needed for "linux-version" command in initrd cleanup script
+	# Depends: fping is needed for armbianmonitor to upload armbian-hardware-monitor.log
 	cat <<-EOF > "${destination}"/DEBIAN/control
 	Package: linux-${RELEASE}-root-${DEB_BRANCH}${BOARD}
 	Version: $REVISION
@@ -49,7 +50,7 @@ create_board_package()
 	Installed-Size: 1
 	Section: kernel
 	Priority: optional
-	Depends: bash, linux-base, u-boot-tools, initramfs-tools, lsb-release
+	Depends: bash, linux-base, u-boot-tools, initramfs-tools, lsb-release, fping
 	Provides: armbian-bsp
 	Conflicts: armbian-bsp
 	Suggests: armbian-config
@@ -73,6 +74,9 @@ create_board_package()
 	    mv /etc/network/interfaces.tmp /etc/network/interfaces
 
 	fi
+
+	# fixing ramdisk corruption when using lz4 compression method
+	sed -i "s/^COMPRESS=.*/COMPRESS=gzip/" /etc/initramfs-tools/initramfs.conf
 
 	# swap
 	grep -q vm.swappiness /etc/sysctl.conf
@@ -160,14 +164,13 @@ create_board_package()
 
 	EOF
 
-	if [[ $RELEASE == bionic ]]; then
+	if [[ $RELEASE == bionic ]] || [[ $RELEASE == focal && $BOARDFAMILY == sun50iw6 ]]; then
 		cat <<-EOF >> "${destination}"/DEBIAN/postinst
-		# temporally disable acceleration in Bionic due to broken mesa packages
-		if [ -n "\$(cat /etc/X11/xorg.conf.d/01-armbian-defaults.conf 2> /dev/null | grep AccelMethod)" ]; then
-		        sed -i '/\Device/,/^\[/ s/AccelMethod".*/AccelMethod"\t "none"/' /etc/X11/xorg.conf.d/01-armbian-defaults.conf
-		else
-		        sed -i '/\Device/a \\\tOption\t\t\t"AccelMethod" "none"' /etc/X11/xorg.conf.d/01-armbian-defaults.conf
-		fi
+		# temporally disable acceleration on some arch in Bionic due to broken mesa packages
+		echo 'Section "Device"
+		\tIdentifier \t"Default Device"
+		\tOption \t"AccelMethod" "none"
+		EndSection' >> /etc/X11/xorg.conf.d/01-armbian-defaults.conf
 		EOF
 	fi
 
@@ -284,10 +287,6 @@ fi
 		mkdir -p "${destination}"/etc/mpv/
 		cp "${SRC}"/packages/bsp/mpv/mpv_mainline.conf "${destination}"/etc/mpv/mpv.conf
 	fi
-
-	# disable power savings on wireless connections by default
-	mkdir -p "${destination}"/usr/lib/NetworkManager/conf.d/
-	cp "${SRC}"/packages/bsp/zz-override-wifi-powersave-off.conf "${destination}"/usr/lib/NetworkManager/conf.d/
 
 	# execute $LINUXFAMILY-specific tweaks
 	[[ $(type -t family_tweaks_bsp) == function ]] && family_tweaks_bsp

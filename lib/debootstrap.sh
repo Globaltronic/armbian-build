@@ -81,7 +81,7 @@ debootstrap_ng()
 	# stage: unmount tmpfs
 	umount $SDCARD 2>&1
 	if [[ $use_tmpfs = yes ]]; then
-		while grep -qs '$SDCARD' /proc/mounts
+		while grep -qs "$SDCARD" /proc/mounts
 		do
 			umount $SDCARD
 			sleep 5
@@ -99,17 +99,34 @@ debootstrap_ng()
 #
 create_rootfs_cache()
 {
-	local packages_hash=$(get_package_list_hash)
-	local cache_type=$(if [[ ${BUILD_DESKTOP} == yes  ]]; then echo "desktop"; elif [[ ${BUILD_MINIMAL} == yes  ]]; then echo "minimal"; else echo "cli";fi)
-	local cache_name=${RELEASE}-${cache_type}-${ARCH}.$packages_hash.tar.lz4
-	local cache_fname=${SRC}/cache/rootfs/${cache_name}
-	local display_name=${RELEASE}-${cache_type}-${ARCH}.${packages_hash:0:3}...${packages_hash:29}.tar.lz4
-
-	display_alert "Checking for local cache" "$display_name" "info"
-	if [[ ! -f $cache_fname && "$ROOT_FS_CREATE_ONLY" != "force" ]]; then
-		display_alert "searching on servers"
-		download_and_verify "_rootfs" "$cache_name"
+	if [[ "$ROOT_FS_CREATE_ONLY" == "force" ]]; then
+		local cycles=1
+		else
+		local cycles=2
 	fi
+	# seek last cache, proceed to previous otherwise build it
+	for ((n=0;n<${cycles};n++)); do
+
+		local packages_hash=$(get_package_list_hash "$(($ROOTFSCACHE_VERSION - $n))")
+		local cache_type=$(if [[ ${BUILD_DESKTOP} == yes  ]]; then echo "desktop"; elif [[ ${BUILD_MINIMAL} == yes  ]]; then echo "minimal"; else echo "cli";fi)
+		local cache_name=${RELEASE}-${cache_type}-${ARCH}.$packages_hash.tar.lz4
+		local cache_fname=${SRC}/cache/rootfs/${cache_name}
+		local display_name=${RELEASE}-${cache_type}-${ARCH}.${packages_hash:0:3}...${packages_hash:29}.tar.lz4
+
+		display_alert "Checking for local cache" "$display_name" "info"
+
+		if [[ ! -f $cache_fname && "$ROOT_FS_CREATE_ONLY" != "force" ]]; then
+			display_alert "searching on servers"
+			download_and_verify "_rootfs" "$cache_name"
+		fi
+
+		if [[ -f $cache_fname ]]; then
+			break
+		else
+			display_alert "not found: try to use previous cache"
+		fi
+
+	done
 
 	if [[ -f $cache_fname && "$ROOT_FS_CREATE_ONLY" != "force" ]]; then
 		local date_diff=$(( ($(date +%s) - $(stat -c %Y $cache_fname)) / 86400 ))
@@ -124,7 +141,7 @@ create_rootfs_cache()
 
 		# stage: debootstrap base system
 		if [[ $NO_APT_CACHER != yes ]]; then
-			# apt-cacher-ng apt proxy parameter
+			# apt-cacher-ng apt-get proxy parameter
 			local apt_extra="-o Acquire::http::Proxy=\"http://${APT_PROXY_ADDR:-localhost:3142}\""
 			local apt_mirror="http://${APT_PROXY_ADDR:-localhost:3142}/$APT_MIRROR"
 		else
@@ -183,7 +200,7 @@ create_rootfs_cache()
 			eval 'LC_ALL=C LANG=C chroot $SDCARD /bin/bash -c "setupcon --save"'
 		fi
 
-		# stage: create apt sources list
+		# stage: create apt-get sources list
 		create_sources_list "$RELEASE" "$SDCARD/"
 
 		# add armhf arhitecture to arm64
@@ -307,7 +324,7 @@ prepare_partitions()
 	mkopts[fat]='-n BOOT'
 	mkopts[ext2]='-q'
 	# mkopts[f2fs] is empty
-	# mkopts[btrfs] is empty
+	mkopts[btrfs]='-m dup'
 	# mkopts[nfs] is empty
 
 	mkfs[ext4]=ext4
@@ -399,17 +416,17 @@ prepare_partitions()
 
 	# stage: create partition table
 	display_alert "Creating partitions" "${bootfs:+/boot: $bootfs }root: $ROOTFS_TYPE" "info"
-	parted -s ${SDCARD}.raw -- mklabel msdos
+	parted -s ${SDCARD}.raw -- mklabel ${IMAGE_PARTITION_TABLE}
 	if [[ $ROOTFS_TYPE == nfs ]]; then
 		# single /boot partition
-		parted -s ${SDCARD}.raw -- mkpart primary ${parttype[$bootfs]} ${bootstart}s -1s
+		parted -s ${SDCARD}.raw -- mkpart primary ${parttype[$bootfs]} ${bootstart}s 100%
 	elif [[ $BOOTSIZE == 0 ]]; then
 		# single root partition
-		parted -s ${SDCARD}.raw -- mkpart primary ${parttype[$ROOTFS_TYPE]} ${rootstart}s -1s
+		parted -s ${SDCARD}.raw -- mkpart primary ${parttype[$ROOTFS_TYPE]} ${rootstart}s 100%
 	else
 		# /boot partition + root partition
 		parted -s ${SDCARD}.raw -- mkpart primary ${parttype[$bootfs]} ${bootstart}s ${bootend}s
-		parted -s ${SDCARD}.raw -- mkpart primary ${parttype[$ROOTFS_TYPE]} ${rootstart}s -1s
+		parted -s ${SDCARD}.raw -- mkpart primary ${parttype[$ROOTFS_TYPE]} ${rootstart}s 100%
 	fi
 
 	# stage: mount image
@@ -523,7 +540,7 @@ prepare_partitions()
 # for cryptroot-unlock to work:
 # https://serverfault.com/questions/907254/cryproot-unlock-with-dropbear-timeout-while-waiting-for-askpass
 #
-# since Debian buster, it has to be called within create_image() on the $MOUNT 
+# since Debian buster, it has to be called within create_image() on the $MOUNT
 # path instead of $SDCARD (which can be a tmpfs and breaks cryptsetup-initramfs).
 # see: https://github.com/armbian/build/issues/1584
 #
@@ -605,54 +622,74 @@ create_image()
 	rm -rf --one-file-system $DESTIMG $MOUNT
 
 	mkdir -p $DESTIMG
-	fingerprint_image "$DESTIMG/${version}.img.txt" "${version}"
 	mv ${SDCARD}.raw $DESTIMG/${version}.img
 
-	if [[ $BUILD_ALL != yes ]]; then
-		if [[ $COMPRESS_OUTPUTIMAGE == yes ]]; then
+	if [[ -z $SEND_TO_SERVER ]]; then
+
+		if [[ $COMPRESS_OUTPUTIMAGE == "" || $COMPRESS_OUTPUTIMAGE == no ]]; then
+			COMPRESS_OUTPUTIMAGE="sha,gpg,img"
+		elif [[ $COMPRESS_OUTPUTIMAGE == yes ]]; then
 			COMPRESS_OUTPUTIMAGE="sha,gpg,7z"
-		fi
-
-		if [[ $COMPRESS_OUTPUTIMAGE == *sha* || -n $CARD_DEVICE ]]; then
-			cd $DESTIMG
-			display_alert "SHA256 calculating" "${version}.img" "info"
-			sha256sum -b ${version}.img > ${version}.img.sha
-			cp ${version}.img.sha "$DEST/images/${version}.img.sha"
-			cd ..
-		fi
-
-		if [[ $COMPRESS_OUTPUTIMAGE == *gpg* ]]; then
-			cd $DESTIMG
-			if [[ -n $GPG_PASS ]]; then
-				display_alert "GPG signing" "${version}.img" "info"
-				echo $GPG_PASS | gpg --passphrase-fd 0 --armor --detach-sign --pinentry-mode loopback --batch --yes ${version}.img || exit 1
-				cp ${version}.img.asc "$DEST/images/${version}.img.asc"
-			else
-				display_alert "GPG signing skipped - no GPG_PASS" "${version}.img" "wrn"
-			fi
-			cd ..
-		fi
-
-		if [[ $COMPRESS_OUTPUTIMAGE == *7z* ]]; then
-			[[ -f $DEST/images/$CRYPTROOT_SSH_UNLOCK_KEY_NAME ]] && cp $DEST/images/$CRYPTROOT_SSH_UNLOCK_KEY_NAME $DESTIMG/
-			# compress image
-			cd $DESTIMG
-			display_alert "Compressing" "$DEST/images/${version}.7z" "info"
-			7za a -t7z -bd -m0=lzma2 -mx=3 -mfb=64 -md=32m -ms=on $DEST/images/${version}.7z ${version}.key ${version}.img* >/dev/null 2>&1
-			cd ..
 		fi
 
 		if [[ $COMPRESS_OUTPUTIMAGE == *gz* ]]; then
 			display_alert "Compressing" "$DEST/images/${version}.img.gz" "info"
-			pigz < $DESTIMG/${version}.img > $DEST/images/${version}.img.gz
+			pigz -3 < $DESTIMG/${version}.img > $DEST/images/${version}.img.gz
+			compression_type=".gz"
 		fi
 
-		mv $DESTIMG/${version}.img.txt $DEST/images/${version}.img.txt || exit 1
-		mv $DESTIMG/${version}.img $DEST/images/${version}.img || exit 1
+		if [[ $COMPRESS_OUTPUTIMAGE == *xz* ]]; then
+			display_alert "Compressing" "$DEST/images/${version}.img.xz" "info"
+			pixz -3 < $DESTIMG/${version}.img > $DEST/images/${version}.img.xz
+			compression_type=".xz"
+		fi
+
+		if [[ $COMPRESS_OUTPUTIMAGE == *img* || $COMPRESS_OUTPUTIMAGE == *7z* ]]; then
+			mv $DESTIMG/${version}.img $DEST/images/${version}.img || exit 1
+			compression_type=""
+		fi
+
+		if [[ $COMPRESS_OUTPUTIMAGE == *sha* ]]; then
+			cd $DEST/images
+			display_alert "SHA256 calculating" "${version}.img${compression_type}" "info"
+			sha256sum -b ${version}.img${compression_type} > ${version}.img${compression_type}.sha
+		fi
+
+		if [[ $COMPRESS_OUTPUTIMAGE == *gpg* ]]; then
+			cd $DEST/images
+			if [[ -n $GPG_PASS ]]; then
+				display_alert "GPG signing" "${version}.img${compression_type}" "info"
+				echo $GPG_PASS | gpg --passphrase-fd 0 --armor --detach-sign --pinentry-mode loopback --batch --yes $DEST/images/${version}.img${compression_type} || exit 1
+			else
+				display_alert "GPG signing skipped - no GPG_PASS" "${version}.img" "wrn"
+			fi
+		fi
+
+		fingerprint_image "$DEST/images/${version}.img${compression_type}.txt" "${version}"
+
+		if [[ $COMPRESS_OUTPUTIMAGE == *7z* ]]; then
+			display_alert "Compressing" "$DEST/images/${version}.7z" "info"
+			7za a -t7z -bd -m0=lzma2 -mx=3 -mfb=64 -md=32m -ms=on \
+			$DEST/images/${version}.7z ${version}.key ${version}.img* >/dev/null 2>&1
+			find $DEST/images/ -type \
+			f \( -name "${version}.img" -o -name "${version}.img.asc" -o -name "${version}.img.txt" -o -name "${version}.img.sha" \) -print0 \
+			| xargs -0 rm >/dev/null 2>&1
+		fi
+
 		rm -rf $DESTIMG
 	fi
-
 	display_alert "Done building" "$DEST/images/${version}.img" "info"
+
+	if [[ $BUILD_ALL == yes ]]; then
+		install -d -o igorp -g igorp -m 775 $DEST/images/${BOARD}/{archive,nightly}
+		if [[ "$BETA" == yes ]]; then
+			install ${INSTALL_PARA} $DEST/images/"${version}"* $DEST/images/"${BOARD}"/nightly
+			rm $DEST/images/"${version}"*
+		else
+			install ${INSTALL_PARA} $DEST/images/"${version}"* $DEST/images/"${BOARD}"/archive
+			rm $DEST/images/"${version}"*
+		fi
+	fi
 
 	# call custom post build hook
 	[[ $(type -t post_build_image) == function ]] && post_build_image "$DEST/images/${version}.img"
