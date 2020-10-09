@@ -1,0 +1,54 @@
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/Makefile b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+index 822d35f4c..1f6542a83 100644
+--- a/arch/arm64/boot/dts/allwinner/overlay/Makefile
++++ b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+@@ -12,6 +12,7 @@ dtbo-$(CONFIG_ARCH_SUNXI) += \
+ 	sun50i-a64-uart2.dtbo \
+ 	sun50i-a64-uart3.dtbo \
+ 	sun50i-a64-uart4.dtbo \
++	sun50i-a64-mmc2-emmc.dtbo \
+ 	sun50i-a64-w1-gpio.dtbo \
+ 	sun50i-a64-ethernet-wiipiido.dtbo \
+ 	sun50i-h5-analog-codec.dtbo \
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-mmc2-emmc.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-mmc2-emmc.dts
+new file mode 100644
+index 000000000..a1818067f
+--- /dev/null
++++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-mmc2-emmc.dts
+@@ -0,0 +1,36 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun50i-a64";
++
++/**
++* @brief MMC2 : eMMC support for wiipiido board
++*/
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			mmc2 = "/soc/mmc@1c11000";
++		};
++	};
++
++	fragment@1 {
++		target = <&mmc2>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++			pinctrl-names = "default";
++			pinctrl-0 = <&mmc2_pins>;
++			vmmc-supply = <&reg_dcdc1>;
++			vqmmc-supply = <&reg_dcdc1>;
++			bus-width = <8>;
++			non-removable;
++			cap-mmc-hw-reset;
++		};
++	};
++	__fixups__ {
++		mmc2 = "/fragment@1:target:0";
++	};
++};

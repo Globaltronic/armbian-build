@@ -1,0 +1,50 @@
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/Makefile b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+index 0a2029e47..f31bf5152 100644
+--- a/arch/arm64/boot/dts/allwinner/overlay/Makefile
++++ b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+@@ -10,6 +10,7 @@ dtbo-$(CONFIG_ARCH_SUNXI) += \
+ 	sun50i-a64-wiipiido-spi-add-cs2.dtbo \
+ 	sun50i-a64-spi-jedec-nor.dtbo \
+ 	sun50i-a64-wiipiido-spi-spidev.dtbo \
++	sun50i-a64-spwm.dtbo \
+ 	sun50i-a64-uart1.dtbo \
+ 	sun50i-a64-uart2.dtbo \
+ 	sun50i-a64-uart3.dtbo \
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-spwm.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-spwm.dts
+new file mode 100644
+index 000000000..2d83cb13e
+--- /dev/null
++++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-spwm.dts
+@@ -0,0 +1,32 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++
++/**
++* @brief 2019-05-09: Created overlay to enable SPWM on PL10 pin :D
++*  2020-03-16 : Converted to Armbian host compiling 
++*/
++	compatible = "allwinner,sun50i-a64";
++
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			r_pwm = "/soc/pwm@1f03800";
++		};
++	};
++
++	fragment@1 {
++		target = <&r_pwm>;
++
++		__overlay__ {
++
++			status = "okay";
++		};
++	};
++
++	__fixups__ {
++		r_pwm = "/fragment@1:target:0";
++	};
++};

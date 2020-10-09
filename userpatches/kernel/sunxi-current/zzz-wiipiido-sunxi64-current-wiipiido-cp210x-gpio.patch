@@ -30,7 +30,7 @@ index 000000000..ef7a70480
 + *
 + *
 + *  2019-09-05
-+ * 	Fixed Writing / reading latch commands for CP2108 
++ * 	Fixed Writing / reading latch commands for CP2108
 + */
 +
 +#include <linux/kernel.h>
@@ -1442,7 +1442,7 @@ index 000000000..ef7a70480
 +	struct cp210x_serial_private *priv = usb_get_serial_data(serial);
 +
 +	if (priv->gpio_altfunc & BIT(offset)){
-+		
++
 +		dev_warn(&serial->interface->dev, "Cannot control GPIO with active alternate function.\n");
 +		return -ENODEV;
 +
@@ -1471,8 +1471,8 @@ index 000000000..ef7a70480
 +		return result;
 +
 +	if (priv->partnum == CP210X_PARTNUM_CP2108){
-+		
-+		
++
++
 +		/*dev_warn(&serial->interface->dev, "RD  req_type %d to get GPIO\n", req_type );*/
 +
 +		result = cp210x_read_vendor_block(serial, REQTYPE_DEVICE_TO_HOST,
@@ -1491,9 +1491,9 @@ index 000000000..ef7a70480
 +
 +
 +	if (priv->partnum == CP210X_PARTNUM_CP2108){
-+		
++
 +		int iface_num;
-+		
++
 +		iface_num = cp210x_interface_num(serial);
 +
 +		/*result = !!(le16_to_cpu(buf16) & BIT(gpio));*/
@@ -1524,13 +1524,13 @@ index 000000000..ef7a70480
 +		goto out;
 +
 +	if (priv->partnum == CP210X_PARTNUM_CP2105) {
-+	
++
 +		struct cp210x_gpio_write buf;
 +
 +		buf.state = ((value == 1) ? (BIT(gpio)):0);
-+			
++
 +		buf.mask = BIT(gpio);
-+		
++
 +
 +		result = cp210x_write_vendor_block(serial,
 +						   REQTYPE_HOST_TO_INTERFACE,
@@ -1538,14 +1538,14 @@ index 000000000..ef7a70480
 +						   sizeof(buf));
 +	} else {
 +
-+				
++
 +
 +		if (priv->partnum == CP210X_PARTNUM_CP2108){
-+		
++
 +			__le32 buff;
 +			u32 val;
 +			int iface_num = 0;
-+		
++
 +			/*TODO:  this method supplied by the patch is incorrect since it doesn't write properly 32 bits to latch*/
 +			/*
 +			if (value == 1){
@@ -1554,18 +1554,18 @@ index 000000000..ef7a70480
 +				buff.state16 = 0;
 +			}	*/
 +
-+			/* Only works with first 4 GPIO's */		
-+/*			
-+			
++			/* Only works with first 4 GPIO's */
++/*
++
 +			buff.state16 = ((value == 1) ? cpu_to_le16(BIT(gpio)):0);
 +
 +
-+			
++
 +			buff.mask16 = cpu_to_le16(BIT(gpio));
 +
 +			result = cp210x_write_vendor_block(serial,
 +					REQTYPE_HOST_TO_INTERFACE,
-+					CP210X_WRITE_LATCH, &buff, 
++					CP210X_WRITE_LATCH, &buff,
 +						  sizeof(buff));
 +*/
 +
@@ -1575,18 +1575,18 @@ index 000000000..ef7a70480
 +
 +			/*TODO: Writing method for the CP2108 register - The proper method*/
 +			val = (((value==1) ? BIT(gpio) : 0 )  << 16) << (iface_num*CP2108_GPIO_NUM) | (BIT(gpio) << (iface_num*CP2108_GPIO_NUM) ) ;
-+	
++
 +			/*Send dummy data for testing*/
-+		//	val  = 0x0000FFFF;  
++		//	val  = 0x0000FFFF;
 +			buff = cpu_to_le32(val);
 +
 +
 +			result = cp210x_write_vendor_block(serial,
 +					REQTYPE_HOST_TO_INTERFACE,
-+					CP210X_WRITE_LATCH, &buff, 
++					CP210X_WRITE_LATCH, &buff,
 +						  sizeof(buff));
 +
-+			
++
 +
 +			//dev_warn(&serial->interface->dev, "WR  state,mask [%x | %x] to set GPIO\n", buff.state16, buff.mask16 );
 +			dev_dbg(&serial->interface->dev, "WR  dev %d to set GPIO\n", iface_num );
@@ -1598,8 +1598,8 @@ index 000000000..ef7a70480
 +
 +
 +			//u16 wIndex = buf.state << 8 | buf.mask;
-+			u16 wIndex = ((value == 1) ? BIT(gpio) : 0) << 8 | BIT(gpio);	
-+			
++			u16 wIndex = ((value == 1) ? BIT(gpio) : 0) << 8 | BIT(gpio);
++
 +
 +			result = usb_control_msg(serial->dev,
 +						 usb_sndctrlpipe(serial->dev, 0),
@@ -1608,7 +1608,7 @@ index 000000000..ef7a70480
 +						 CP210X_WRITE_LATCH,
 +						 wIndex,
 +						 NULL, 0, USB_CTRL_SET_TIMEOUT);
-+	
++
 +		}
 +	}
 +
@@ -1638,8 +1638,8 @@ index 000000000..ef7a70480
 +		/* hardware does not support an input mode */
 +		return -ENOTSUPP;
 +	}else if(cp210x_is_cp2102n(serial)) {
-+		
-+		
++
++
 +		/* push-pull pins cannot be changed to be inputs */
 +		if (priv->gpio_pushpull & BIT(gpio)){
 +
@@ -1648,12 +1648,12 @@ index 000000000..ef7a70480
 +		}
 +
 +	}
-+ 
++
 +	/* Obsolete:  push-pull pins cannot be changed to be inputs */
-+	
++
 +	if (priv->gpio_pushpull & BIT(gpio))
 +			return -EINVAL;
-+	
++
 +
 +	/* make sure to release pin if it is being driven low */
 +	cp210x_gpio_set(gc, gpio, 1);
@@ -1711,7 +1711,7 @@ index 000000000..ef7a70480
 +
 +	struct cp210x_serial_private *priv = usb_get_serial_data(serial);
 +	struct cp2108_port_config config;
-+	u16 gpio_mode; 
++	u16 gpio_mode;
 +	u16 gpio_latch;
 +	u8 iface_num;
 +	int result;
@@ -1729,7 +1729,7 @@ index 000000000..ef7a70480
 +	iface_num = cp210x_interface_num(serial);
 +	gpio_mode = le16_to_cpu(config.reset_latch.mode[CP2108_GPIO_PB]);
 +	gpio_latch = le16_to_cpu(config.reset_latch.latch[CP2108_GPIO_PB]);
-+	
++
 +
 +	priv->gpio_altfunc = config.enhanced_fxn[iface_num];
 +	priv->gpio_pushpull = (gpio_mode >> (iface_num*CP2108_GPIO_NUM)) & 0x0f;
@@ -1743,7 +1743,7 @@ index 000000000..ef7a70480
 +	/*GPIO input obtained by mix Opendrain and latch value high*/
 +	priv->gpio_input &= ~priv->gpio_pushpull;
 +	priv->gc.ngpio = CP2108_GPIO_NUM;
-+			
++
 +
 +
 +	return 0;
@@ -2155,633 +2155,4 @@ index 000000000..ef7a70480
 +
 +MODULE_DESCRIPTION(DRIVER_DESC);
 +MODULE_LICENSE("GPL v2");
-+
-diff --git a/arch/arm64/boot/dts/allwinner/overlay/Makefile b/arch/arm64/boot/dts/allwinner/overlay/Makefile
-index 7f55788e8..1727217cc 100644
---- a/arch/arm64/boot/dts/allwinner/overlay/Makefile
-+++ b/arch/arm64/boot/dts/allwinner/overlay/Makefile
-@@ -1,6 +1,10 @@
- # SPDX-License-Identifier: GPL-2.0
- dtbo-$(CONFIG_ARCH_SUNXI) += \
- 	sun50i-a64-boe-hb140wx1-501.dtbo \
-+	sun50i-a64-i2c0-mcp3428.dtbo \
-+	sun50i-a64-i2c0-lis35dh.dtbo \
-+	sun50i-a64-mmc2-emmc.dtbo \
-+	sun50i-a64-ethernet-wiipiido.dtbo \
- 	sun50i-a64-i2c0.dtbo \
- 	sun50i-a64-i2c1.dtbo \
- 	sun50i-a64-pps-gpio.dtbo \
-diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-ethernet-wiipiido.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-ethernet-wiipiido.dts
-new file mode 100644
-index 000000000..c1d45304b
---- /dev/null
-+++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-ethernet-wiipiido.dts
-@@ -0,0 +1,68 @@
-+/dts-v1/;
-+/plugin/;
-+
-+/ {
-+	compatible = "allwinner,sun50i-a64";
-+
-+/**
-+* @brief Ethernet : Ethernet support for wiipiido board
-+* 2020-02-03: Changes made for kernel 5.4.x support
-+* 0x6b => rmii_pins
-+* 0x23 => dcdc1
-+*/
-+	fragment@0 {
-+		target-path = "/aliases";
-+
-+		__overlay__ {
-+			emac = "/soc/ethernet@1c30000";
-+			mdio = "/soc/ethernet@1c30000/mdio";
-+			ext_rgmii_phy = "/soc/ethernet@1c30000/mdio/ethernet-phy@1";
-+			ext_rmii_phy1 = "/soc/ethernet@1c30000/mdio/ethernet-phy@1";
-+			
-+		};
-+	};
-+
-+	fragment@1 {
-+		target = <&emac>;
-+		__overlay__ {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+			pinctrl-0 = <&rmii_pins>;
-+			phy-mode = "rgmii-txid";
-+			phy-supply = <&reg_dcdc1>;
-+			allwinner,tx-delay-ps = <600>;
-+
-+		};
-+	};
-+	
-+	fragment@2 {
-+		target = <&mdio>;
-+		__overlay__ {
-+			#address-cells = <0x1>;
-+			#size-cells = <0x0>;
-+			
-+		};
-+	};
-+
-+	fragment@3 {
-+		target = <&ext_rgmii_phy>;
-+		__overlay__ {
-+			reg = <0x7>;		
-+		};
-+	};
-+
-+	fragment@4 {
-+		target = <&ext_rmii_phy1>;
-+		__overlay__ {
-+			reg = <0x7>;		
-+		};
-+	};
-+
-+	__fixups__ {
-+		emac = "/fragment@1:target:0";
-+		mdio = "/fragment@2:target:0";
-+		ext_rgmii_phy = "/fragment@3:target:0";
-+		ext_rmii_phy1 = "/fragment@4:target:0";
-+	};
-+};
-+
-diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-lis35dh.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-lis35dh.dts
-new file mode 100644
-index 000000000..16b33639d
---- /dev/null
-+++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-lis35dh.dts
-@@ -0,0 +1,36 @@
-+/dts-v1/;
-+/plugin/;
-+
-+/ {
-+	compatible = "allwinner,sun50i-a64";
-+
-+/**
-+* @brief I2C0 : LIS35DH / LIS3DE MEMS support for wiipiido board
-+*/
-+	fragment@0 {
-+		target-path = "/aliases";
-+
-+		__overlay__ {
-+			i2c0 = "/soc/i2c@1c2ac00";
-+		};
-+	};
-+
-+	fragment@1 {
-+		target = <&i2c0>;
-+		__overlay__ {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+		
-+ 			lis35dh: mems@29{
-+        			compatible = "st,lis3dh";
-+			        reg = <0x29>;
-+			        st,default-rate = <8>;
-+        		};
-+ 		};
-+	};
-+	
-+	__fixups__ {
-+		i2c0 = "/fragment@1:target:0";
-+	};
-+	
-+};
-diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-mcp3428.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-mcp3428.dts
-new file mode 100644
-index 000000000..0a101c6b5
---- /dev/null
-+++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-mcp3428.dts
-@@ -0,0 +1,36 @@
-+/dts-v1/;
-+/plugin/;
-+
-+/ {
-+	compatible = "allwinner,sun50i-a64";
-+
-+/**
-+* @brief I2C0 : MCP3428 ADC support for wiipiido board
-+* Kernel v5.4.x dts 
-+*/
-+	fragment@0 {
-+		target-path = "/aliases";
-+
-+		__overlay__ {
-+			i2c0 = "/soc/i2c@1c2ac00";
-+		};
-+	};
-+
-+	fragment@1 {
-+		target = <&i2c0>;
-+		__overlay__ {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+			
-+			mcp3428: adc@6c{
-+        			compatible = "microchip,mcp3428";
-+        			reg = <0x6c>;
-+        		};
-+ 		};
-+	};
-+	
-+	__fixups__ {
-+		i2c0 = "/fragment@1:target:0";
-+	};
-+	
-+};
-diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-mmc2-emmc.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-mmc2-emmc.dts
-new file mode 100644
-index 000000000..7c53f5666
---- /dev/null
-+++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-mmc2-emmc.dts
-@@ -0,0 +1,39 @@
-+/dts-v1/;
-+/plugin/;
-+
-+/ {
-+	compatible = "allwinner,sun50i-a64";
-+
-+/**
-+* @brief MMC2 : eMMC support for wiipiido board
-+*/
-+	fragment@0 {
-+		target-path = "/aliases";
-+
-+		__overlay__ {
-+			mmc2 = "/soc/mmc@1c11000";
-+		};
-+	};
-+
-+	
-+
-+
-+	fragment@1 {
-+		target = <&mmc2>;
-+		__overlay__ {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+			status = "okay";
-+			pinctrl-names = "default";
-+			pinctrl-0 = <&mmc2_pins>;
-+			vmmc-supply = <&reg_dcdc1>;
-+			vqmmc-supply = <&reg_dcdc1>;
-+			bus-width = <8>;
-+			non-removable;
-+			cap-mmc-hw-reset;
-+		};
-+	};
-+	__fixups__ {
-+		mmc2 = "/fragment@1:target:0";
-+	};
-+};
-diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64.dts
-index 233743728..204c5a7bb 100644
---- a/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64.dts
-+++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64.dts
-@@ -168,6 +168,16 @@
- 	non-removable;
- 	bus-width = <4>;
- 	status = "okay";
-+	
-+	/* Added for WIIPIIDO*/
-+	brcmf: wifi@1 {
-+                reg = <1>;
-+                compatible = "brcm,bcm4329-fmac";
-+                interrupt-parent = <&r_pio>;
-+                interrupts = <0 3 IRQ_TYPE_LEVEL_LOW>; /* PL3 */
-+                interrupt-names = "host-wake";
-+        };
-+
- };
- 
- &ohci0 {
-@@ -336,14 +346,21 @@
- &uart1 {
- 	pinctrl-names = "default";
- 	pinctrl-0 = <&uart1_pins>, <&uart1_rts_cts_pins>;
-+	uart-has-rtscts; /* for WIIPIIDO  */
- 	status = "okay";
- 
- 	bluetooth {
--		compatible = "realtek,rtl8723bs-bt";
--		reset-gpios = <&r_pio 0 4 GPIO_ACTIVE_LOW>; /* PL4 */
-+		/*compatible = "realtek,rtl8723bs-bt";*/
-+		compatible = "brcm,bcm43438-bt";/* for WIIPIIDO  */
-+		max-speed = <1500000>; /* for WIIPIIDO  */
-+		clocks = <&rtc 1>; /* for WIIPIIDO  */
-+		clock-names = "lpo"; /* for WIIPIIDO  */
-+		vbat-supply = <&reg_eldo1>; /* for WIIPIIDO  */
-+		vddio-supply = <&reg_dldo4>; /* for WIIPIIDO  */
-+		shutdown-gpios = <&r_pio 0 4 GPIO_ACTIVE_HIGH>; /* PL4 for WIIPIIDO */
- 		device-wake-gpios = <&r_pio 0 5 GPIO_ACTIVE_HIGH>; /* PL5 */
- 		host-wake-gpios = <&r_pio 0 6 GPIO_ACTIVE_HIGH>; /* PL6 */
--		firmware-postfix = "pine64";
-+		/*firmware-postfix = "pine64";*/ /* for WIIPIIDO  */
- 	};
- };
- 
-@@ -369,7 +386,8 @@
- };
- 
- &usb_otg {
--	dr_mode = "host";
-+	/*dr_mode = "host";*/
-+	dr_mode = "otg";
- 	status = "okay";
- };
- 
-diff --git a/arch/arm64/boot/dts/allwinner/overlay/Makefile b/arch/arm64/boot/dts/allwinner/overlay/Makefile
-index 1727217cc..7d371df2a 100644
---- a/arch/arm64/boot/dts/allwinner/overlay/Makefile
-+++ b/arch/arm64/boot/dts/allwinner/overlay/Makefile
-@@ -1,6 +1,7 @@
- # SPDX-License-Identifier: GPL-2.0
- dtbo-$(CONFIG_ARCH_SUNXI) += \
- 	sun50i-a64-boe-hb140wx1-501.dtbo \
-+	sun50i-a64-i2c0-pcf85063.dtbo \
- 	sun50i-a64-i2c0-mcp3428.dtbo \
- 	sun50i-a64-i2c0-lis35dh.dtbo \
- 	sun50i-a64-mmc2-emmc.dtbo \
-diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-pcf85063.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-pcf85063.dts
-new file mode 100644
-index 000000000..35d69a7c0
---- /dev/null
-+++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-pcf85063.dts
-@@ -0,0 +1,40 @@
-+/dts-v1/;
-+/plugin/;
-+
-+/ {
-+	compatible = "allwinner,sun50i-a64";
-+
-+/**
-+* @brief I2C0 : PCF85063 support for wiipiido board
-+* 2020-03-09: Changed overlay to host compilation on userpatches
-+*/
-+	fragment@0 {
-+		target-path = "/aliases";
-+
-+		__overlay__ {
-+			i2c0 = "/soc/i2c@1c2ac00";
-+		};
-+	};
-+
-+	
-+
-+
-+	fragment@1 {
-+		target = <&i2c0>;
-+		__overlay__ {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+				
-+ 			pcf85063: rtc@51{
-+			        compatible = "nxp,pcf85063";
-+			        reg = <0x51>;
-+        		};
-+		};
-+	};
-+
-+	__fixups__ {
-+		i2c0 = "/fragment@1:target:0";
-+	};
-+
-+};
-+
-diff --git a/arch/arm64/boot/dts/allwinner/overlay/Makefile b/arch/arm64/boot/dts/allwinner/overlay/Makefile
-index 7d371df2a..8495ef092 100644
---- a/arch/arm64/boot/dts/allwinner/overlay/Makefile
-+++ b/arch/arm64/boot/dts/allwinner/overlay/Makefile
-@@ -1,6 +1,12 @@
- # SPDX-License-Identifier: GPL-2.0
-+# 
-+#	sun50i-a64-spi-add-cs1.dtbo 
-+#	sun50i-a64-spi-spidev.dtbo 
- dtbo-$(CONFIG_ARCH_SUNXI) += \
- 	sun50i-a64-boe-hb140wx1-501.dtbo \
-+	sun50i-a64-wiipiido-spi-add-cs2.dtbo \
-+        sun50i-a64-wiipiido-spi-add-cs1.dtbo \
-+        sun50i-a64-wiipiido-spi-spidev.dtbo \
- 	sun50i-a64-i2c0-pcf85063.dtbo \
- 	sun50i-a64-i2c0-mcp3428.dtbo \
- 	sun50i-a64-i2c0-lis35dh.dtbo \
-@@ -9,9 +15,7 @@ dtbo-$(CONFIG_ARCH_SUNXI) += \
- 	sun50i-a64-i2c0.dtbo \
- 	sun50i-a64-i2c1.dtbo \
- 	sun50i-a64-pps-gpio.dtbo \
--	sun50i-a64-spi-add-cs1.dtbo \
- 	sun50i-a64-spi-jedec-nor.dtbo \
--	sun50i-a64-spi-spidev.dtbo \
- 	sun50i-a64-uart1.dtbo \
- 	sun50i-a64-uart2.dtbo \
- 	sun50i-a64-uart3.dtbo \
-diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-wiipiido-spi-add-cs1.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-wiipiido-spi-add-cs1.dts
-new file mode 100644
-index 000000000..7aa95d1c2
---- /dev/null
-+++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-wiipiido-spi-add-cs1.dts
-@@ -0,0 +1,51 @@
-+/dts-v1/;
-+/plugin/;
-+
-+/ {
-+	compatible = "allwinner,sun50i-a64";
-+
-+	fragment@0 {
-+		target = <&pio>;
-+
-+		__overlay__ {
-+
-+
-+			spi1_cs1: spi1_cs1 {
-+				pins = "PC7";
-+				function = "gpio_out";
-+				output-high;
-+			};
-+		};
-+	};
-+
-+
-+	fragment@1 {
-+		target = <&spi1>;
-+
-+		__overlay__ {
-+			pinctrl-names = "default", "default";
-+			pinctrl-1 = <&spi1_cs1>;
-+			cs-gpios = <0>, <&pio 0x2 0x7 0x0>;
-+		};
-+	};
-+
-+	__symbols__ {
-+		spi1_cs1 = "/fragment@0/__overlay__/spi1_cs1";
-+	};
-+
-+//	__fixups__ {
-+//		pio = "/fragment@0:target:0", "/fragment@1/__overlay__:cs-gpios:4";
-+//		spi1 = "/fragment@1:target:0";
-+//	};
-+//
-+//	__local_fixups__ {
-+//
-+//
-+//		fragment@1 {
-+//
-+//			__overlay__ {
-+//				pinctrl-1 = <&spi1_cs1>;
-+//			};
-+//		};
-+//	};
-+};
-diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-wiipiido-spi-add-cs2.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-wiipiido-spi-add-cs2.dts
-new file mode 100644
-index 000000000..0d77305b0
---- /dev/null
-+++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-wiipiido-spi-add-cs2.dts
-@@ -0,0 +1,47 @@
-+/dts-v1/;
-+/plugin/;
-+
-+/ {
-+	compatible = "allwinner,sun50i-a64";
-+
-+	fragment@0 {
-+		target = <&pio>;
-+
-+		__overlay__ {
-+
-+			spi1_cs2: spi1_cs2 {
-+				pins = "PD6";
-+				function = "gpio_out";
-+				output-high;
-+			};
-+		};
-+	};
-+
-+	fragment@1 {
-+		target = <&spi1>;
-+
-+		__overlay__ {
-+			pinctrl-names = "default", "default";
-+			pinctrl-1 = <&spi1_cs2>;
-+			cs-gpios = <0>, <&pio 0x3 0x6 0x0>;
-+		};
-+	};
-+
-+	__symbols__ {
-+		spi1_cs2 = "/fragment@0/__overlay__/spi1_cs2";
-+	};
-+
-+//	__fixups__ {
-+//		pio = "/fragment@0:target:0", "/fragment@1/__overlay__:cs-gpios:4";
-+//		spi1 = "/fragment@1:target:0";
-+//	};
-+//
-+//	__local_fixups__ {
-+//
-+//		fragment@1 {
-+//			__overlay__ {
-+//				pinctrl-1 = <&spi1_cs2>;
-+//			};
-+//		};
-+//	};
-+};
-diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-wiipiido-spi-spidev.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-wiipiido-spi-spidev.dts
-new file mode 100644
-index 000000000..799b4bafe
---- /dev/null
-+++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-wiipiido-spi-spidev.dts
-@@ -0,0 +1,64 @@
-+/dts-v1/;
-+/plugin/;
-+
-+/ {
-+	compatible = "allwinner,sun50i-a64";
-+
-+	fragment@0 {
-+		target-path = "/aliases";
-+
-+		__overlay__ {
-+			spi0 = "/soc/spi@1c68000";
-+			spi1 = "/soc/spi@1c69000";
-+		};
-+	};
-+
-+	fragment@1 {
-+		target = <&spi0>;
-+
-+		__overlay__ {
-+			#address-cells = <0x1>;
-+			#size-cells = <0x0>;
-+
-+			status = "okay";
-+
-+			spidev {
-+				compatible = "spidev";
-+				reg = <0x0>;
-+				spi-max-frequency = <0xf4240>;
-+			};
-+		};
-+	};
-+
-+	fragment@2 {
-+		target = <&spi1>;
-+
-+		__overlay__ {
-+			#address-cells = <0x1>;
-+			#size-cells = <0x0>;
-+
-+			num-cs = <0x2>;
-+			status = "okay";
-+		
-+			spidev@0 {
-+				compatible = "spidev";
-+				reg = <0x0>;
-+				spi-max-frequency = <0xf4240>;
-+			};
-+		
-+			spidev@1 {
-+				compatible = "spidev";
-+				reg = <0x1>;
-+				spi-max-frequency = <0xf4240>;
-+			};
-+
-+
-+
-+		};
-+	};
-+
-+//	__fixups__ {
-+//		spi0 = "/fragment@1:target:0";
-+//		spi1 = "/fragment@2:target:0";
-+//	};
-+};
-diff --git a/arch/arm64/boot/dts/allwinner/overlay/Makefile b/arch/arm64/boot/dts/allwinner/overlay/Makefile
-index 8495ef092..644ec5178 100644
---- a/arch/arm64/boot/dts/allwinner/overlay/Makefile
-+++ b/arch/arm64/boot/dts/allwinner/overlay/Makefile
-@@ -16,6 +16,7 @@ dtbo-$(CONFIG_ARCH_SUNXI) += \
- 	sun50i-a64-i2c1.dtbo \
- 	sun50i-a64-pps-gpio.dtbo \
- 	sun50i-a64-spi-jedec-nor.dtbo \
-+	sun50i-a64-spwm.dtbo \
- 	sun50i-a64-uart1.dtbo \
- 	sun50i-a64-uart2.dtbo \
- 	sun50i-a64-uart3.dtbo \
-diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-spwm.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-spwm.dts
-new file mode 100644
-index 000000000..00047a01b
---- /dev/null
-+++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-spwm.dts
-@@ -0,0 +1,34 @@
-+/dts-v1/;
-+/plugin/;
-+
-+/ {
-+
-+
-+/**
-+* @brief 2019-05-09: Created overlay to enable SPWM on PL10 pin :D
-+*  2020-03-16 : Converted to Armbian host compiling 
-+*/
-+	compatible = "allwinner,sun50i-a64";
-+
-+	fragment@0 {
-+		target-path = "/aliases";
-+
-+		__overlay__ {
-+			r_pwm = "/soc/pwm@1f03800";
-+		};
-+	};
-+
-+	fragment@1 {
-+		target = <&r_pwm>;
-+
-+		__overlay__ {
-+
-+			status = "okay";
-+		};
-+	};
-+
-+	__fixups__ {
-+		r_pwm = "/fragment@1:target:0";
-+	};
-+
-+};
-diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-w1-gpio.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-w1-gpio.dts
-index d23046913..ae9e38e37 100644
---- a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-w1-gpio.dts
-+++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-w1-gpio.dts
-@@ -1,6 +1,9 @@
- /dts-v1/;
- /plugin/;
- 
-+/**
-+* @brief Changed w1-gpio to match PC4 instead of PD4
-+*/
- / {
- 	compatible = "allwinner,sun50i-a64";
- 
-@@ -8,8 +11,10 @@
- 		target = <&pio>;
- 		__overlay__ {
- 			w1_pins: w1_pins {
--				pins = "PD4";
-+				pins = "PC4";
- 				function = "gpio_in";
-+				pull = < 0x1 >;
-+				drive = < 0x0 >;
- 			};
- 		};
- 	};
-@@ -21,9 +26,10 @@
- 				compatible = "w1-gpio";
- 				pinctrl-names = "default";
- 				pinctrl-0 = <&w1_pins>;
--				gpios = <&pio 3 4 0>; /* PD4 */
-+				gpios = <&pio 0x2 4 0>; /* PC4 */
- 				status = "okay";
- 			};
- 		};
- 	};
- };
 +

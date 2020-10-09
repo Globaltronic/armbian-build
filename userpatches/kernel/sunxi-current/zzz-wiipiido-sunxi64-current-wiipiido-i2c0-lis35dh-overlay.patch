@@ -1,0 +1,54 @@
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/Makefile b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+index d54dc0858..83b5d5768 100644
+--- a/arch/arm64/boot/dts/allwinner/overlay/Makefile
++++ b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+@@ -1,6 +1,7 @@
+ # SPDX-License-Identifier: GPL-2.0
+ dtbo-$(CONFIG_ARCH_SUNXI) += \
+ 	sun50i-a64-i2c0.dtbo \
++	sun50i-a64-i2c0-lis35dh.dtbo \
+ 	sun50i-a64-i2c1.dtbo \
+ 	sun50i-a64-pps-gpio.dtbo \
+ 	sun50i-a64-spi-add-cs1.dtbo \
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-lis35dh.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-lis35dh.dts
+new file mode 100644
+index 000000000..16b33639d
+--- /dev/null
++++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-i2c0-lis35dh.dts
+@@ -0,0 +1,36 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun50i-a64";
++
++/**
++* @brief I2C0 : LIS35DH / LIS3DE MEMS support for wiipiido board
++*/
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			i2c0 = "/soc/i2c@1c2ac00";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2c0>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++ 			lis35dh: mems@29{
++        			compatible = "st,lis3dh";
++			        reg = <0x29>;
++			        st,default-rate = <8>;
++        		};
++ 		};
++	};
++
++	__fixups__ {
++		i2c0 = "/fragment@1:target:0";
++	};
++
++};
