@@ -1,0 +1,119 @@
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/Makefile b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+index febdc4221..d4d7370f9 100644
+--- a/arch/arm64/boot/dts/allwinner/overlay/Makefile
++++ b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ dtbo-$(CONFIG_ARCH_SUNXI) += \
++	sun50i-a64-wiipiido-spi-spidev-all-cs.dtbo \
+ 	sun50i-a64-i2c0.dtbo \
+ 	sun50i-a64-i2c0-lis35dh.dtbo \
+	sun50i-a64-i2c0-mcp3428.dtbo \
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-wiipiido-spi-spidev-all-cs.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-wiipiido-spi-spidev-all-cs.dts
+new file mode 100644
+index 000000000..7fb653329
+--- /dev/null
++++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-wiipiido-spi-spidev-all-cs.dts
+@@ -0,0 +1,102 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun50i-a64";
++
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			//spi0 = "/soc/spi@1c68000";
++			spi1 = "/soc/spi@1c69000";
++		};
++	};
++
++	//SPI 1
++	fragment@2 {
++		target = <&spi1>;
++
++		__overlay__ {
++			#address-cells = <0x1>;
++			#size-cells = <0x0>;
++			
++			pinctrl-names = "default", "default", "default";
++			pinctrl-0 = <&spi1_pins>;
++			pinctrl-1 = <&spi1_cs1>;
++			pinctrl-2 = <&spi1_cs2>;
++
++			status = "okay";
++			num-cs = <0x3>;
++			
++			cs-gpios = <0>, <0x1c 0x2 0x7 0x0>, <0x1c 0x3 0x6 0x0>;
++		
++			spidev@0 {
++				compatible = "spidev";
++				reg = <0x0>;
++				spi-max-frequency = <0xf4240>;
++			};
++		
++			spidev@1 {
++				compatible = "spidev";
++				reg = <0x1>;
++				spi-max-frequency = <0xf4240>;
++			};
++
++			spidev@2 {
++				compatible = "spidev";
++				reg = <0x2>;
++				spi-max-frequency = <0xf4240>;
++			};
++		};
++	};
++	
++	//SPI 1 CS
++	fragment@4 {
++		target = <&pio>;
++		
++		__overlay__ {
++			spi1_cs1 {
++				pins = "PC7";
++				function = "gpio_out";
++				pull = <0x00>;
++				drive = <0x00>;
++			};
++
++			spi1_cs2 {
++				pins = "PD6";
++				function = "gpio_out";
++				pull = <0x00>;
++				drive = <0x00>;
++			};
++		};
++	};
++
++	__symbols__ {
++		spi1_cs1 = "/fragment@4/__overlay__/spi1_cs1";
++		spi1_cs2 = "/fragment@4/__overlay__/spi1_cs2";
++	};
++	
++//	__fixups__ {
++//		//spi0 = "/fragment@1:target:0";
++//		spi1 = "/fragment@2:target:0";
++//		//pio = "/fragment@4:target:0", "/fragment@3:target:0", "/fragment@2/__overlay__:cs-gpios:4";
++//		pio = "/fragment@4:target:0", "/fragment@2/__overlay__:cs-gpios:4";
++//	};
++
++//	__local_fixups__ {
++//
++//		//fragment@1 {
++//		//	__overlay__ {
++//		//		pinctrl-1 = <0x0>;
++//		//	};
++//		//};
++//
++//		fragment@2 {
++//			__overlay__ {
++//				pinctrl-1 = <0x0>;
++//				pinctrl-2 = <0x0>;
++//			};
++//		};
++//	};
++};

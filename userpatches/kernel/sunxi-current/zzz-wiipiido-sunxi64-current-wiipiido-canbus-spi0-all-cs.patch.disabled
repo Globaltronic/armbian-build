@@ -1,0 +1,101 @@
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-canbus-spi0-all-cs.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-canbus-spi0-all-cs.dts
+new file mode 100644
+index 000000000..7a360021b
+--- /dev/null
++++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-canbus-spi0-all-cs.dts
+@@ -0,0 +1,84 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun50i-a64";
++	
++	fragment@0 {
++		target-path = "/";
++		__overlay__ {
++			can0_osc_fixed: can0_osc_fixed {
++				compatible = "fixed-clock";
++				#clock-cells = <0>;
++				clock-output-names = "can0_osc_fixed";
++				clock-frequency  = <24000000>;
++			};
++			can1_osc_fixed: can1_osc_fixed {
++				compatible = "fixed-clock";
++				#clock-cells = <0>;
++				clock-output-names = "can1_osc_fixed";
++				clock-frequency  = <24000000>;
++			};
++		};
++	};
++	
++	fragment@1 {
++		target = < &pio >;
++
++		__overlay__ {
++			spi0_pins: spi0 {
++				pins = "PC0", "PC1", "PC2", "PC3", "PC4";
++				function = "spi0";
++			};
++			can0_pin_irq: can0_pin_irq {
++				pins = "PH7";
++				function = "irq";
++				bias-pull-up;
++			}; 
++			
++			can1_pin_irq: can1_pin_irq {
++				pins = "PH8";
++				function = "irq";
++				bias-pull-up;
++			};
++		};
++	};
++	
++	fragment@2 {
++		target = <&spi0>;
++    
++		__overlay__ {
++			#address-cells = < 0x01 >;
++			#size-cells = < 0x00 >;
++			status = "okay";
++			num-cs = <2>;
++			pinctrl-names = "default", "default";
++			pinctrl-0 = <&spi0_pins>;
++			cs-gpios = <0>, <&pio 2 4 0>;
++			
++			mcp2515@0 {
++				compatible = "microchip,mcp2515";
++				reg = <0>;
++				spi-max-frequency = <10000000>;
++				interrupt-parent = <&pio>;
++				interrupts = <7 7 2>;
++				clocks = <&can0_osc_fixed>;
++				pinctrl-names = "default";
++				pinctrl-0 = <&can0_pin_irq>;
++				status = "okay";
++			};
++			
++			mcp2515@1 {
++				compatible = "microchip,mcp2515";
++				reg = <1>;
++				spi-max-frequency = <10000000>;
++				interrupt-parent = <&pio>;
++				interrupts = <7 8 2>;
++				clocks = <&can1_osc_fixed>;
++				pinctrl-names = "default";
++				pinctrl-0 = <&can1_pin_irq>;
++				status = "okay";
++			};
++		};
++	};
++};
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/Makefile b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+index bab4c2ac0..d768be13f 100644
+--- a/arch/arm64/boot/dts/allwinner/overlay/Makefile
++++ b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ dtbo-$(CONFIG_ARCH_SUNXI) += \
++	sun50i-a64-canbus-spi0-all-cs.dtbo \
+ 	sun50i-a64-wiipiido-spi1-all-cs.dtbo \
+ 	sun50i-a64-wiipiido-spi0-all-cs.dtbo \
+ 	sun50i-a64-wiipiido-spi-spidev-all-cs.dtbo \

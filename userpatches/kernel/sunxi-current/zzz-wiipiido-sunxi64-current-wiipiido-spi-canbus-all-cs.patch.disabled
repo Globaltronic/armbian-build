@@ -1,0 +1,187 @@
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/Makefile b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+index bab4c2ac0..95d9445b6 100644
+--- a/arch/arm64/boot/dts/allwinner/overlay/Makefile
++++ b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ dtbo-$(CONFIG_ARCH_SUNXI) += \
++	sun50i-a64-spi-canbus-all-cs.dtbo \
+ 	sun50i-a64-wiipiido-spi1-all-cs.dtbo \
+ 	sun50i-a64-wiipiido-spi0-all-cs.dtbo \
+ 	sun50i-a64-wiipiido-spi-spidev-all-cs.dtbo \
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-spi-canbus-all-cs.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-spi-canbus-all-cs.dts
+new file mode 100644
+index 000000000..485a483fb
+--- /dev/null
++++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-spi-canbus-all-cs.dts
+@@ -0,0 +1,170 @@
++/dts-v1/;
++
++/ {
++	compatible = "allwinner,sun50i-a64";
++
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			spi0 = "/soc/spi@1c68000";
++		};
++	};
++
++	//CAN 0 & 1
++	fragment@1 {
++		target = <0xffffffff>;
++    
++		__overlay__ {
++			#address-cells = <0x1>;
++			#size-cells = <0x0>;
++			
++			//pinctrl-names = "default", "default";
++			//pinctrl-0 = <0x2e>;
++			//pinctrl-1 = <0xa2>;
++    
++			status = "okay";
++			//num-cs = <0x2>;
++			
++			//cs-gpios = <0>, <0x1c 0x2 0x4 0x0>;
++		
++			mcp2515@0 {
++				compatible = "microchip,mcp2515";
++				reg = <0x0>;
++				spi-max-frequency = <0xf4240>;
++				pinctrl-names = "default";
++				pinctrl-0 = <0x01>;
++				//pinctrl-1 = <0x05>;
++				reset-gpios = <0x1f 0x1 0x2 0x0>;
++				interrupt-parent = <0x1c>;
++				interrupts = <0x7 0x7 0x2>;
++				clocks = <0x03>;
++				phandle = <0x10>;
++				status = "okay";
++			};
++		
++			//mcp2515@1 {
++			//	compatible = "microchip,mcp2515";
++			//	reg = <0x1>;
++			//	spi-max-frequency = <0xf4240>;
++			//	pinctrl-names = "default";
++			//	pinctrl-0 = <0x02>;
++			//	interrupt-parent = <0x1c>;
++			//	interrupts = <0x7 0x8 0x2>;
++			//	clocks = <0x04>;
++			//	phandle = <0x11>;
++			//	status = "okay";
++			//};
++		};
++	};
++	
++	//CAN 0 & 1 NIRQ
++	fragment@2 {
++		target = <0xffffffff>;
++		
++		__overlay__ {
++			can0_pin_irq {
++				pins = "PH7";
++				function = "irq";
++				//bias-pull-up;
++				pull = <0x01>;
++				drive = <0x00>;
++				phandle = <0x01>;
++			}; 
++			
++			//can1_pin_irq {
++			//	pins = "PH8";
++			//	function = "irq";
++			//	//bias-pull-up;
++			//	pull = <0x01>;
++			//	drive = <0x00>;
++			//	phandle = <0x02>;
++			//};
++			
++			can_pin_reset {
++				pins = "PB2";
++				function = "gpio_out";
++				//bias-pull-up;
++				pull = <0x00>;
++				drive = <0x00>;
++				phandle = <0x05>;
++			}; 
++		};
++	};
++	
++	//CAN 0 & 1 Clocks
++	fragment@3 {
++		target-path = "/";
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <1>;
++			
++			can0_osc_fixed {
++				compatible = "fixed-clock";
++				#clock-cells = <0>;
++				clock-output-names = "can0osc24M";
++				clock-frequency  = <24000000>;
++				phandle = <0x03>;
++			};
++			
++			//can1_osc_fixed {
++			//	compatible = "fixed-clock";
++			//	#clock-cells = <0>;
++			//	clock-output-names = "can1osc24M";
++			//	clock-frequency  = <24000000>;
++			//	phandle = <0x04>;
++			//};
++		};
++	};
++	
++	//fragment@4 {
++	//	target = <0xffffffff>;
++	//	
++	//	__overlay__ {
++	//		spi0_cs1 {
++	//			pins = "PC4";
++	//			function = "gpio_out";
++	//			pull = <0x00>;
++	//			drive = <0x00>;
++	//			phandle = <0xa2>; 
++	//		};
++	//	};
++	//};
++	
++	__symbols__ {
++		can_pin_reset = "/fragment@2/__overlay__/can_pin_reset";
++		can0_pin_irq = "/fragment@2/__overlay__/can0_pin_irq";
++		//can1_pin_irq = "/fragment@2/__overlay__/can1_pin_irq";
++		can0_osc_fixed = "/fragment@3/__overlay__/can0_osc_fixed";
++		//can1_osc_fixed = "/fragment@3/__overlay__/can1_osc_fixed";
++		//spi0_cs1 = "/fragment@4/__overlay__/spi0_cs1";
++		can0 = "/fragment@1/__overlay__/mcp2515@0";
++		//can1 = "/fragment@1/__overlay__/mcp2515@1";
++	}; 
++	
++	__fixups__ {
++		spi0 = "/fragment@1:target:0";
++		//pio = "/fragment@4:target:0", "/fragment@2:target:0", "/fragment@1/__overlay__:cs-gpios:4", "/fragment@1/__overlay__/mcp2515@0:interrupt-parent:0", "/fragment@1/__overlay__/mcp2515@1:interrupt-parent:0";
++		
++		pio = "/fragment@2:target:0", "/fragment@1/__overlay__/mcp2515@0:interrupt-parent:0";
++	};
++
++	__local_fixups__ {
++
++		fragment@1 {
++			__overlay__ {
++				//pinctrl-1 = <0x0>;
++				
++				mcp2515@0 {
++					pinctrl-0 = <0x0>;
++					clocks = <0x0>;
++				};
++				
++				//mcp2515@1 {
++				//	pinctrl-0 = <0x0>;
++				//	clocks = <0x0>;
++				//};
++			};
++		};
++	};
++};

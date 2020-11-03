@@ -1,0 +1,93 @@
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/Makefile b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+index f31bf5152..febdc4221 100644
+--- a/arch/arm64/boot/dts/allwinner/overlay/Makefile
++++ b/arch/arm64/boot/dts/allwinner/overlay/Makefile
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ dtbo-$(CONFIG_ARCH_SUNXI) += \
++	sun50i-a64-wiipiido-bluetooth.dtbo \
+ 	sun50i-a64-i2c0.dtbo \
+ 	sun50i-a64-i2c0-lis35dh.dtbo \
+ 	sun50i-a64-i2c0-mcp3428.dtbo \
+diff --git a/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-wiipiido-bluetooth.dts b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-wiipiido-bluetooth.dts
+new file mode 100644
+index 000000000..6de0ecd8b
+--- /dev/null
++++ b/arch/arm64/boot/dts/allwinner/overlay/sun50i-a64-wiipiido-bluetooth.dts
+@@ -0,0 +1,76 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "allwinner,sun50i-a64";
++
++/**
++* @brief UART1-Bluetooth : On Wifi/BT connector, with RTS/CTS 
++*/
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			pio = "/soc/pinctrl@1c20800";
++			serial1 = "/soc/serial@1c28800";
++		};
++	};
++
++
++
++
++	fragment@1 {
++		target = <&pio>;
++		__overlay__ {
++			uart1_pins: uart1_pins {
++				pins = "PG6", "PG7";
++				function = "uart1";
++			};
++
++			uart1_rts_cts_pins: uart1_rts_cts_pins {
++				pins = "PG8", "PG9";
++				function = "uart1";
++			};
++		};
++	};
++
++	
++
++	fragment@2 {
++		target = <&uart1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&uart1_pins>, <&uart1_rts_cts_pins>;
++			uart-has-rtscts; /* for WIIPIIDO  */
++			status = "okay";
++			
++			bluetooth {
++				/*compatible = "realtek,rtl8723bs-bt";*/
++				compatible = "brcm,bcm43438-bt";/* for WIIPIIDO  */
++				max-speed = <1500000>; /* for WIIPIIDO  */
++				clocks = <&rtc 1>; /* for WIIPIIDO  */
++				clock-names = "lpo"; /* for WIIPIIDO  */
++				vbat-supply = <&reg_eldo1>; /* for WIIPIIDO  */
++				vddio-supply = <&reg_dldo4>; /* for WIIPIIDO  */
++				shutdown-gpios = <&r_pio 0 4 GPIO_ACTIVE_HIGH>; /* PL4 for WIIPIIDO */
++				device-wake-gpios = <&r_pio 0 5 GPIO_ACTIVE_HIGH>; /* PL5 */
++				host-wake-gpios = <&r_pio 0 6 GPIO_ACTIVE_HIGH>; /* PL6 */
++				/*firmware-postfix = "pine64";*/ /* for WIIPIIDO  */
++			};
++		
++		
++		};
++	};
++
++	//	__fixups__ {
++	//	pio = "/fragment@1:target:0";  
++	//	uart1_pins = "/fragment@1/__overlay__:pinctrl-0:0";
++	//	uart1_rts_cts_pins = "/fragment@1/__overlay__:pinctrl-0:1";
++	//	uart1 = "/fragment@2:target:0";
++	//};
++
++	
++};
++
