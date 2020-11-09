@@ -1,0 +1,7 @@
+verbosity=1
+overlay_prefix=sun50i-a64
+rootdev=UUID=9e01aef3-340b-4aa5-900c-7d8fdad77222
+rootfstype=ext4
+overlays=uart2
+user_overlays=ethernet-wiipiido i2c0 i2c0-lis35dh i2c0-mcp3428 i2c0-pcf85063 i2c1 mmc2-emmc spwm w1-gpio wiipiido-spi-add-cs1 wiipiido-spi-add-cs2 wiipiido-spi-spidev wiipiido-wifi wiipiido-otg
+usbstoragequirks=0x2537:0x1066:u,0x2537:0x1068:u

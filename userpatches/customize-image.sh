@@ -30,6 +30,7 @@ Main() {
 			#CopyFsOverlay
 			echo root:root1234 | chpasswd
 			rm /root/.not_logged_in_yet
+
 			tar -xvzf /tmp/overlay/lib_firmware_brcm_bluetooth.tar.gz -C /.
 			tar -xvzf /tmp/overlay/lib_firmware_regulatory.tar.gz -C /.
 			tar -xvzf /tmp/overlay/etc_modules_wiipiido.tar.gz -C /.
@@ -42,6 +43,16 @@ Main() {
 			cd /root/bluez-alsa/build
 			make && make install
 			echo "export LIBASOUND_THREAD_SAFE=0" >> /etc/bash.bashrc
+			
+			# 2020-11-06: Copy overlays to overlay user folder
+			mkdir -p /boot/overlay-user/
+			cp /tmp/overlay/wiipiido-overlays/* /boot/overlay-user/.
+			cp /tmp/overlay/armbianEnv.txt /boot/armbianEnv.txt
+
+			# 2020-11-06: change hostname	
+			echo "wiipiido" > /etc/hostname
+			sed -i -e "s/pine64/wiipiido/g" /etc/hosts
+
 			# Does not commpile kernel. Must be added on kernel patches 
 			#cd /root/cp210x_gpio_test
 			#make all
