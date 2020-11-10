@@ -1,0 +1,61 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "allwinner,sun50i-a64";
+	
+    fragment@0 {
+		target = <&pio>;
+		__overlay__ {
+            spi1_cs0: spi1_cs0 {
+				pins = "PD0";
+                function = "gpio_out";
+				output-high;
+			};
+            spi1_cs1: spi1_cs1 {
+				pins = "PC7";
+                function = "gpio_out";
+				output-high;
+			};
+            spi1_cs2: spi1_cs2 {
+				pins = "PD6";
+                function = "gpio_out";
+				output-high;
+			};
+		};
+	};
+
+	fragment@1 {
+		target = <&spi1>;
+
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+			num-cs = <3>;
+			cs-gpios = <&pio 3 0 0>, <&pio 2 7 0>, <&pio 3 6 0>;
+            pinctrl-names = "default", "default", "default";
+            
+			spidev@0 {
+				compatible = "spidev";
+				reg = <0>; 
+				spi-max-frequency = <160000000>;
+				status = "okay";
+			};
+
+			spidev@1 {
+				compatible = "spidev";
+				reg = <1>;
+				spi-max-frequency = <160000000>;
+				status = "okay";
+			};
+
+			spidev@2 {
+				compatible = "spidev";
+				reg = <2>;
+				spi-max-frequency = <160000000>;
+				status = "okay";
+			};
+		};
+	};
+};

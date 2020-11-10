@@ -53,6 +53,36 @@ Main() {
 			echo "wiipiido" > /etc/hostname
 			sed -i -e "s/pine64/wiipiido/g" /etc/hosts
 
+			# 2020-11-09 : DTC compile on the fly :D
+
+			cd /boot/overlay-user/.
+			
+			#/usr/bin/dtc -I dts ethernet-wiipiido.dts -O dtb -o ethernet-wiipiido.dtbo
+			#/usr/bin/dtc -I dts i2c0-lis35dh.dts -O dtb -o i2c0-lis35dh.dtbo
+			#/usr/bin/dtc -I dts i2c0-mcp3428.dts -O dtb -o i2c0-mcp3428.dtbo
+			#/usr/bin/dtc -I dts i2c0-pcf85063.dts -O dtb -o i2c0-pcf85063.dtbo
+			#/usr/bin/dtc -I dts i2c1.dts -O dtb -o i2c1.dtbo
+			#/usr/bin/dtc -I dts mmc2-emmc.dts -O dtb -o mmc2-emmc.dtbo
+			#/usr/bin/dtc -I dts spwm.dts -O dtb -o spwm.dtbo
+			#/usr/bin/dtc -I dts w1-gpio.dts -O dtb -o w1-gpio.dtbo
+			#/usr/bin/dtc -I dts wiipiido-bluetooth.dts -O dtb -o wiipiido-bluetooth.dtbo
+			#/usr/bin/dtc -I dts wiipiido-canbus-spi0-all-cs.dts -O dtb -o wiipiido-canbus-spi0-all-cs.dtbo
+			#/usr/bin/dtc -I dts wiipiido-otg.dts -O dtb -o wiipiido-otg.dtbo
+			#/usr/bin/dtc -I dts wiipiido-spi0-all-cs.dts -O dtb -o wiipiido-spi0-all-cs.dtbo
+			#/usr/bin/dtc -I dts wiipiido-spi1-all-cs.dts -O dtb -o wiipiido-spi1-all-cs.dtbo
+			#/usr/bin/dtc -I dts wiipiido-spi-add-cs1.dts -O dtb -o wiipiido-spi-add-cs1.dtbo
+			#/usr/bin/dtc -I dts wiipiido-spi-add-cs2.dts -O dtb -o wiipiido-spi-add-cs2.dtbo
+			#/usr/bin/dtc -I dts wiipiido-spi-canbus-all-cs.dts -O dtb -o wiipiido-spi-canbus-all-cs.dtbo
+			#/usr/bin/dtc -I dts wiipiido-spi-spidev-all-cs.dts -O dtb -o wiipiido-spi-spidev-all-cs.dtbo
+			#/usr/bin/dtc -I dts wiipiido-spi-spidev.dts -O dtb -o wiipiido-spi-spidev.dtbo
+			#/usr/bin/dtc -I dts wiipiido-wifi.dts -O dtb -o wiipiido-wifi.dtbo
+
+			files="$(ls *.dts | cut -d'.' -f1)"
+			for file in $files
+			do
+    				dtc -I dts "$file".dts -O dtb -o "$file".dtbo
+			done
+			
 			# Does not commpile kernel. Must be added on kernel patches 
 			#cd /root/cp210x_gpio_test
 			#make all

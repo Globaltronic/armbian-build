@@ -1,0 +1,64 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "allwinner,sun50i-a64";
+
+/**
+* @brief Ethernet : Ethernet support for wiipiido board
+* 2020-02-03: Changes made for kernel 5.4.x support
+* 0x6b => rmii_pins
+* 0x23 => dcdc1
+*/
+	fragment@0 {
+		target-path = "/aliases";
+
+		__overlay__ {
+			emac = "/soc/ethernet@1c30000";
+			mdio = "/soc/ethernet@1c30000/mdio";
+			ext_rgmii_phy = "/soc/ethernet@1c30000/mdio/ethernet-phy@1";
+			ext_rmii_phy1 = "/soc/ethernet@1c30000/mdio/ethernet-phy@1";
+		};
+	};
+
+	fragment@1 {
+		target = <&emac>;
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&rmii_pins>;
+			phy-mode = "rgmii-txid";
+			phy-supply = <&reg_dcdc1>;
+			allwinner,tx-delay-ps = <600>;
+		};
+	};
+
+	fragment@2 {
+		target = <&mdio>;
+		__overlay__ {
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+		};
+	};
+
+	fragment@3 {
+		target = <&ext_rgmii_phy>;
+		__overlay__ {
+			reg = <0x7>;
+		};
+	};
+
+	fragment@4 {
+		target = <&ext_rmii_phy1>;
+		__overlay__ {
+			reg = <0x7>;
+		};
+	};
+
+	__fixups__ {
+		emac = "/fragment@1:target:0";
+		mdio = "/fragment@2:target:0";
+		ext_rgmii_phy = "/fragment@3:target:0";
+		ext_rmii_phy1 = "/fragment@4:target:0";
+	};
+};

@@ -1,0 +1,36 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "allwinner,sun50i-a64";
+
+/**
+* @brief MMC2 : eMMC support for wiipiido board
+*/
+	fragment@0 {
+		target-path = "/aliases";
+
+		__overlay__ {
+			mmc2 = "/soc/mmc@1c11000";
+		};
+	};
+
+	fragment@1 {
+		target = <&mmc2>;
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+			pinctrl-names = "default";
+			pinctrl-0 = <&mmc2_pins>;
+			vmmc-supply = <&reg_dcdc1>;
+			vqmmc-supply = <&reg_dcdc1>;
+			bus-width = <8>;
+			non-removable;
+			cap-mmc-hw-reset;
+		};
+	};
+	__fixups__ {
+		mmc2 = "/fragment@1:target:0";
+	};
+};

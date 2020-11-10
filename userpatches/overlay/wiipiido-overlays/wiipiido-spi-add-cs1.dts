@@ -1,0 +1,50 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "allwinner,sun50i-a64";
+
+	fragment@0 {
+		target = <&pio>;
+
+		__overlay__ {
+
+			spi1_cs1: spi1_cs1 {
+				pins = "PC7";
+				function = "gpio_out";
+				output-high;
+			};
+		};
+	};
+
+
+	fragment@1 {
+		target = <&spi1>;
+
+		__overlay__ {
+			pinctrl-names = "default", "default";
+			pinctrl-1 = <&spi1_cs1>;
+			cs-gpios = <0>, <&pio 0x2 0x7 0x0>;
+		};
+	};
+
+	__symbols__ {
+		spi1_cs1 = "/fragment@0/__overlay__/spi1_cs1";
+	};
+
+//	__fixups__ {
+//		pio = "/fragment@0:target:0", "/fragment@1/__overlay__:cs-gpios:4";
+//		spi1 = "/fragment@1:target:0";
+//	};
+//
+//	__local_fixups__ {
+//
+//
+//		fragment@1 {
+//
+//			__overlay__ {
+//				pinctrl-1 = <&spi1_cs1>;
+//			};
+//		};
+//	};
+};

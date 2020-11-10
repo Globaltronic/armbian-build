@@ -1,0 +1,32 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+
+/**
+* @brief 2019-05-09: Created overlay to enable SPWM on PL10 pin :D
+*  2020-03-16 : Converted to Armbian host compiling 
+*/
+	compatible = "allwinner,sun50i-a64";
+
+	fragment@0 {
+		target-path = "/aliases";
+
+		__overlay__ {
+			r_pwm = "/soc/pwm@1f03800";
+		};
+	};
+
+	fragment@1 {
+		target = <&r_pwm>;
+
+		__overlay__ {
+
+			status = "okay";
+		};
+	};
+
+	__fixups__ {
+		r_pwm = "/fragment@1:target:0";
+	};
+};

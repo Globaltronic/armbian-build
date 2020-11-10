@@ -1,0 +1,36 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "allwinner,sun50i-a64";
+
+/**
+* @brief I2C0 : MCP3428 ADC support for wiipiido board
+* Kernel v5.4.x dts
+*/
+	fragment@0 {
+		target-path = "/aliases";
+
+		__overlay__ {
+			i2c0 = "/soc/i2c@1c2ac00";
+		};
+	};
+
+	fragment@1 {
+		target = <&i2c0>;
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			mcp3428: adc@6c{
+        			compatible = "microchip,mcp3428";
+        			reg = <0x6c>;
+        		};
+ 		};
+	};
+
+	__fixups__ {
+		i2c0 = "/fragment@1:target:0";
+	};
+
+};
