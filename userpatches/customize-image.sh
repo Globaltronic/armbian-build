@@ -82,7 +82,11 @@ Main() {
 			do
     				dtc -I dts "$file".dts -O dtb -o "$file".dtbo
 			done
-			
+	
+			# 2020-11-12: Disable autologin  :P
+		  	sed -i "s/--autologin root //g"  /etc/systemd/system/serial-getty@.service.d/override.conf
+		  	sed -i "s/--autologin root //g"  /etc/systemd/system/getty@.service.d/override.conf
+
 			# Does not commpile kernel. Must be added on kernel patches 
 			#cd /root/cp210x_gpio_test
 			#make all
