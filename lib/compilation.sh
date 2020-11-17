@@ -169,7 +169,7 @@ compile_uboot()
 		# create patch for manual source changes
 		[[ $CREATE_PATCHES == yes ]] && userpatch_create "u-boot"
 
-		if [[ -n $ATFSOURCE ]]; then			
+		if [[ -n $ATFSOURCE ]]; then
 			cp -Rv "${atftempdir}"/*.bin .
 			rm -rf "${atftempdir}"
 		fi
@@ -275,7 +275,7 @@ compile_uboot()
 
 	[[ ! -f $uboottempdir/${uboot_name}.deb ]] && exit_with_error "Building u-boot package failed"
 
-	mv "$uboottempdir/${uboot_name}.deb" "${DEB_STORAGE}/"
+	rsync -rq "$uboottempdir/${uboot_name}.deb" "${DEB_STORAGE}/"
 }
 
 compile_kernel()
@@ -419,7 +419,7 @@ compile_kernel()
 	# produce deb packages: image, headers, firmware, dtb
 	echo -e "\n\t== deb packages: image, headers, firmware, dtb ==\n" >> "${DEST}"/debug/compilation.log
 	eval CCACHE_BASEDIR="$(pwd)" env PATH="${toolchain}:${PATH}" \
-		'make -j1 $kernel_packing \
+		'make $CTHREADS $kernel_packing \
 		KDEB_PKGVERSION=$REVISION \
 		BRANCH=$BRANCH \
 		LOCALVERSION="-${LINUXFAMILY}" \
@@ -447,14 +447,14 @@ compile_kernel()
 
 	if [[ $BUILD_KSRC != no ]]; then
 		fakeroot dpkg-deb -z0 -b "${sources_pkg_dir}" "${sources_pkg_dir}.deb"
-		mv "${sources_pkg_dir}.deb" "${DEB_STORAGE}/"
+		rsync -rq "${sources_pkg_dir}.deb" "${DEB_STORAGE}/"
 	fi
 	rm -rf "${sources_pkg_dir}"
 
 	cd .. || exit
 	# remove firmare image packages here - easier than patching ~40 packaging scripts at once
 	rm -f linux-firmware-image-*.deb
-	cp ./*.deb "${DEB_STORAGE}/" || exit_with_error "Failed moving kernel DEBs"
+	rsync -rq ./*.deb "${DEB_STORAGE}/" || exit_with_error "Failed moving kernel DEBs"
 
 	# store git hash to the file
 	echo "${hash}" > "${SRC}/cache/hash"$([[ ${BETA} == yes ]] && echo "-beta")"/linux-image-${BRANCH}-${LINUXFAMILY}.githash"
@@ -516,7 +516,7 @@ compile_firmware()
 	mv "armbian-firmware${FULL}" "armbian-firmware${FULL}_${REVISION}_all"
 	fakeroot dpkg -b "armbian-firmware${FULL}_${REVISION}_all" >> "${DEST}"/debug/install.log 2>&1
 	mv "armbian-firmware${FULL}_${REVISION}_all" "armbian-firmware${FULL}"
-	mv "armbian-firmware${FULL}_${REVISION}_all.deb" "${DEB_STORAGE}/"
+	rsync -rq "armbian-firmware${FULL}_${REVISION}_all.deb" "${DEB_STORAGE}/"
 
 	# remove temp directory
 	rm -rf "${firmwaretempdir}"
@@ -564,7 +564,7 @@ compile_armbian-config()
 	ln -sf /usr/sbin/softy "${tmpdir}"/usr/bin/softy
 
 	fakeroot dpkg -b "${tmpdir}" >/dev/null
-	mv "${tmpdir}.deb" "${DEB_STORAGE}/"
+	rsync -rq "${tmpdir}.deb" "${DEB_STORAGE}/"
 	rm -rf "${tmpdir}"
 
 }
@@ -760,8 +760,8 @@ process_patch_file()
 userpatch_create()
 {
 	# create commit to start from clean source
-	improved_git add .
-	improved_git -c user.name='Armbian User' -c user.email='user@example.org' commit -q -m "Cleaning working copy"
+	git add .
+	git -c user.name='Armbian User' -c user.email='user@example.org' commit -q -m "Cleaning working copy"
 
 	local patch="$DEST/patch/$1-$LINUXFAMILY-$BRANCH.patch"
 
@@ -769,7 +769,7 @@ userpatch_create()
 	if [[ -f $patch ]]; then
 		display_alert "Applying existing $1 patch" "$patch" "wrn" && patch --batch --silent -p1 -N < "${patch}"
 		# read title of a patch in case Git is configured
-		if [[ -n $(improved_git config user.email) ]]; then
+		if [[ -n $(git config user.email) ]]; then
 			COMMIT_MESSAGE=$(cat "${patch}" | grep Subject | sed -n -e '0,/PATCH/s/.*PATCH]//p' | xargs)
 			display_alert "Patch name extracted" "$COMMIT_MESSAGE" "wrn"
 		fi
@@ -780,29 +780,29 @@ userpatch_create()
 	display_alert "Press <Enter> after you are done" "waiting" "wrn"
 	read -r </dev/tty
 	tput cuu1
-	improved_git add .
+	git add .
 	# create patch out of changes
-	if ! improved_git diff-index --quiet --cached HEAD; then
+	if ! git diff-index --quiet --cached HEAD; then
 		# If Git is configured, create proper patch and ask for a name
-		if [[ -n $(improved_git config user.email) ]]; then
+		if [[ -n $(git config user.email) ]]; then
 			display_alert "Add / change patch name" "$COMMIT_MESSAGE" "wrn"
 			read -e -p "Patch description: " -i "$COMMIT_MESSAGE" COMMIT_MESSAGE
 			[[ -z "$COMMIT_MESSAGE" ]] && COMMIT_MESSAGE="Patching something"
-			improved_git commit -s -m "$COMMIT_MESSAGE"
-			improved_git format-patch -1 HEAD --stdout --signature="Created with Armbian build tools https://github.com/armbian/build" > "${patch}"
-			PATCHFILE=$(improved_git format-patch -1 HEAD)
+			git commit -s -m "$COMMIT_MESSAGE"
+			git format-patch -1 HEAD --stdout --signature="Created with Armbian build tools https://github.com/armbian/build" > "${patch}"
+			PATCHFILE=$(git format-patch -1 HEAD)
 			rm $PATCHFILE # delete the actual file
 			# create a symlink to have a nice name ready
 			find $DEST/patch/ -type l -delete # delete any existing
 			ln -sf $patch $DEST/patch/$PATCHFILE
 		else
-			improved_git diff --staged > "${patch}"
+			git diff --staged > "${patch}"
 		fi
 		display_alert "You will find your patch here:" "$patch" "info"
 	else
 		display_alert "No changes found, skipping patch creation" "" "wrn"
 	fi
-	improved_git reset --soft HEAD~
+	git reset --soft HEAD~
 	for i in {3..1..1}; do echo -n "$i." && sleep 1; done
 }
 
